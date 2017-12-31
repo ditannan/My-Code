@@ -1,0 +1,170 @@
+---
+title: "is.TD.match"
+author: "Xzm"
+date: "2017楠<9e><b4>11閺<88><88>16閺<83><a5>"
+output:
+  word_document: default
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+## 匹配前比较
+
+
+```{r}
+# 载入包
+library(dplyr)
+library(MatchIt)
+library(knitr)
+```
+
+```{r}
+# 读取数据
+total <- read.csv('total.csv')
+# 肿瘤大小分组
+total['tumor.size.gp'] <- ifelse(total$tumor.size<5, 0, 1)
+# 定义返回均数标准差函数
+mystat <- function(x){
+  m.sd = c()
+  mean <- mean(x)
+  std <- sd(x)
+  m.sd <- c(m.sd, mean, std)
+  m.sd
+}
+```
+
+### N分期
+
+```{r}
+table(total$N.period, total$is.td.new)
+chisq.test(total$is.td.new, total$N.period)
+```
+
+### T分期
+
+```{r}
+table(total$T.period, total$is.td.new)
+chisq.test(total$is.td.new, total$T.period)
+```
+
+### 是否转移
+
+```{r}
+table(total$is.trans, total$is.td.new)
+chisq.test(total$is.td.new, total$is.trans)
+```
+
+### 肿瘤大小
+
+```{r}
+table(total$tumor.size.gp, total$is.td.new)
+chisq.test(total$is.td.new, total$tumor.size.gp)
+```
+
+### 分化程度
+
+```{r}
+table(total$dif.level, total$is.td.new)
+chisq.test(total$is.td.new, total$dif.level)
+```
+
+### 肿瘤位置
+
+```{r}
+table(total$tumor.loc, total$is.td.new)
+chisq.test(total$is.td.new, total$tumor.loc)
+```
+
+### 年龄
+```{r}
+tapply(total$age, total$is.td.new, mystat)
+t.test(total$age ~ total$is.td.new)
+```
+
+### 性别
+
+```{r}
+table(total$gender, total$is.td.new)
+chisq.test(total$is.td.new, total$gender)
+```
+
+```{r}
+match.it <- matchit(is.td.new ~ T.period + N.period + age
+                    + tumor.loc + dif.level + is.trans + tumor.size.gp, 
+                    data = total, method="nearest", ratio=1, discard = 'both')
+a <- summary(match.it)
+# 匹配情况
+kable(a$nn, digits = 2, align = 'c', 
+      caption = 'Table 2: Sample sizes')
+```
+
+```{r}
+plot(match.it, type = 'jitter', interactive = FALSE)
+```
+
+```{r}
+# 挑选出匹配后数据
+df.match <- match.data(match.it)[1 : ncol(total)]
+```
+
+## 匹配后比较
+
+### N分期
+
+```{r}
+table(total$N.period, total$is.td.new)
+chisq.test(total$is.td.new, total$N.period)
+```
+
+### T分期
+
+```{r}
+table(df.match$T.period, df.match$is.td.new)
+chisq.test(df.match$is.td.new, df.match$T.period)
+```
+
+### 是否转移
+
+```{r}
+table(df.match$is.trans, df.match$is.td.new)
+chisq.test(df.match$is.td.new, df.match$is.trans)
+```
+
+### 肿瘤大小
+
+```{r}
+table(df.match$tumor.size.gp, df.match$is.td.new)
+chisq.test(df.match$is.td.new, df.match$tumor.size.gp)
+```
+
+### 分化程度
+
+```{r}
+table(df.match$dif.level, df.match$is.td.new)
+chisq.test(df.match$is.td.new, df.match$dif.level)
+```
+
+### 肿瘤位置
+
+```{r}
+table(df.match$tumor.loc, df.match$is.td.new)
+chisq.test(df.match$is.td.new, df.match$tumor.loc)
+```
+
+### 年龄
+```{r}
+tapply(df.match$age, df.match$is.td.new, mystat)
+t.test(df.match$age ~ df.match$is.td.new)
+```
+
+### 性别
+
+```{r}
+table(df.match$gender, df.match$is.td.new)
+chisq.test(df.match$is.td.new, df.match$gender)
+```
+
+
